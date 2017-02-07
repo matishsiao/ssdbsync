@@ -13,11 +13,11 @@ https://github.com/matishsiao/ssdbproxy
 version: 0.0.1
 
 # Futures
-	support functions:
-		single key sync
-    single hash key sync
-    key scan sync
-    hash scan sync
+    support functions:
+	single key sync
+	single hash key sync
+	key scan sync
+	hash scan sync
 	
 # Configuration
 
@@ -48,15 +48,20 @@ use json format to configuration ssdb-sync setting.
 
 ```
 
-## SSDBProxy Configuration
+## SSDB-Sync Configuration
 
 | Config Fields  | Description | 
 | ------------- | ------------- |
-| debug  | debug mode:true / false  |
-| host  | ssdb host  |
-| port  | ssdb port  |
-| password  | if you use auth params,you can use it to control connection |
+| srcdb  | source ssdb  |
+| outdb  | output ssdb |
 | list | sync data list |
+
+### SSDB Configuration
+| Node Fields | Description | Struct |
+| ------------- | ------------- | ------------- |
+| host   | ssdb host | string |
+| port   | ssdb port | int |
+| password   | ssdb auth string | string |
 
 ### List Configuration
 | Node Fields | Description | Struct |
