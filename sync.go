@@ -26,12 +26,14 @@ func main() {
 	if err != nil {
 		log.Fatal("src db connection error:", err)
 	}
+	srcDBClient.UseZip(true)
 	srcDBClient.KeepAlive()
 	if configs.SrcDB.Host != configs.OutDB.Host || configs.SrcDB.Port != configs.OutDB.Port {
 		outDBClient, err = ssdb.Connect(configs.OutDB.Host, configs.OutDB.Port, configs.OutDB.Password)
 		if err != nil {
 			log.Fatal("output db connection error:", err)
 		}
+		outDBClient.UseZip(true)
 		outDBClient.KeepAlive()
 	} else {
 		outDBClient = srcDBClient
