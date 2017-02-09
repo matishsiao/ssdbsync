@@ -1,19 +1,16 @@
 {
   "srcdb":{
-    "host":"192.168.0.1",
+    "host":"127.0.0.1",
     "port":4002,
-    "password":""
+    "password":"db-password"
   },
   "outdb":{
-    "host":"192.168.1.1",
-    "port":4002,
-    "password":""
+    "host":"127.0.0.1",
+    "port":4003,
+    "password":"db-password"
   },
   "list":[
-    {"mode":"all","hash":"Hash-Test","key":""},
-    {"mode":"","hash":"Hash-Key","key":"test"},
-    {"mode":"scan","hash":"","key":"","start":"Key-A","end":"Key-B","bypass":["Bypass"]},
-    {"mode":"","hash":"","key":"Single-Key"},
-    {"mode":"hscan","start":"Hash-A","end":"Hash-B","bypass":["Bypass","bypassB"]}
+    {"type":"all","mode":"diff","hash":"Test","key":""},
+    {"type":"hscan","mode":"diff","start":"Hash-A","end":"Hash-B","bypass":["-Bypass-"]}
   ]
 }

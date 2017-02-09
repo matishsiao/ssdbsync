@@ -14,6 +14,7 @@ type DBConfigs struct {
 
 type Contents struct {
 	Mode   string   `json:"mode"`
+	Type   string   `json:"type"`
 	Hash   string   `json:"hash"`
 	Key    string   `json:"key"`
 	Start  string   `json:"start"`

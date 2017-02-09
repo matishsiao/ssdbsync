@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"log"
 	"os"
@@ -10,14 +11,23 @@ import (
 	"github.com/matishsiao/gossdb/ssdb"
 )
 
+const VERSION = "0.0.1"
+
 var (
 	srcDBClient *ssdb.Client
 	outDBClient *ssdb.Client
+	configPath  string
 )
 
 func main() {
+	flag.StringVar(&configPath, "c", "sync.json", "config json file path.")
+	flag.Parse()
+	log.Printf("SSDB-Sync Version:%s Config:%s\n", VERSION, configPath)
 	log.Println("Notice: Please using SSDB-Proxy to run this tools,becase we using a lot SSDB-Proxy functions.")
-	configs, err := loadConfigs("sync.json")
+	configs, err := loadConfigs(configPath)
+	if err != nil {
+		panic(err)
+	}
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +60,7 @@ func main() {
 
 func DataSync(configs Configs) {
 	for k, cmd := range configs.List {
-		switch strings.ToLower(cmd.Mode) {
+		switch strings.ToLower(cmd.Type) {
 		case "all":
 			if cmd.Hash != "" {
 				list, err := srcDBClient.HashGetAll(cmd.Hash)
@@ -58,15 +68,40 @@ func DataSync(configs Configs) {
 					log.Printf("DataSync[%d]:Sync %s get failed. error:%v\n", k, cmd.Hash, err)
 					continue
 				}
-				for hk, hv := range list {
-					outDBClient.BatchAppend("hset", cmd.Hash, hk, hv)
+				writeCounter := 0
+				switch strings.ToLower(cmd.Mode) {
+				case "diff":
+					outlist, err := outDBClient.HashGetAll(cmd.Hash)
+					if err != nil {
+						log.Printf("DataSync[%d]:Sync %s get failed. error:%v\n", k, cmd.Hash, err)
+						continue
+					}
+					for hk, hv := range list {
+						if ov, ok := outlist[hk]; ok {
+							if ov != hv {
+								writeCounter++
+								outDBClient.BatchAppend("hset", cmd.Hash, hk, hv)
+							}
+						} else {
+							writeCounter++
+							outDBClient.BatchAppend("hset", cmd.Hash, hk, hv)
+						}
+					}
+				default:
+					for hk, hv := range list {
+						writeCounter++
+						outDBClient.BatchAppend("hset", cmd.Hash, hk, hv)
+					}
 				}
-				_, err = outDBClient.Exec()
-				if err != nil {
-					log.Printf("DataSync[%d]:Sync %s write failed. error:%v\n", k, cmd.Hash, err)
-					continue
+				if writeCounter > 0 {
+					_, err = outDBClient.Exec()
+					if err != nil {
+						log.Printf("DataSync[%d]:Sync %s write failed. error:%v\n", k, cmd.Hash, err)
+						continue
+					}
 				}
-				log.Printf("DataSync[%d]:Sync %s successful.\n", k, cmd.Hash)
+
+				log.Printf("DataSync[%d]:Sync %s successful. total:%d\n", k, cmd.Hash, writeCounter)
 			} else {
 				log.Printf("DataSync[%d]:Sync format incorrect. hash:%v\n", k, cmd.Hash)
 			}
@@ -99,15 +134,40 @@ func DataSync(configs Configs) {
 						log.Printf("DataSync[%d]:Sync %s get failed. error:%v\n", k, hash, err)
 						continue
 					}
-					for hk, hv := range clist {
-						outDBClient.BatchAppend("hset", hash, hk, hv)
+					writeCounter := 0
+					switch strings.ToLower(cmd.Mode) {
+					case "diff":
+						outlist, err := outDBClient.HashGetAll(hash)
+						if err != nil {
+							log.Printf("DataSync[%d]:Sync %s get failed. error:%v\n", k, hash, err)
+							continue
+						}
+						for hk, hv := range clist {
+							if ov, ok := outlist[hk]; ok {
+								if ov != hv {
+									writeCounter++
+									outDBClient.BatchAppend("hset", hash, hk, hv)
+								}
+							} else {
+								writeCounter++
+								outDBClient.BatchAppend("hset", hash, hk, hv)
+							}
+						}
+					default:
+						for hk, hv := range clist {
+							writeCounter++
+							outDBClient.BatchAppend("hset", hash, hk, hv)
+						}
 					}
-					_, err = outDBClient.Exec()
-					if err != nil {
-						log.Printf("DataSync[%d]:Sync %s write failed. error:%v\n", k, hash, err)
-						continue
+					if writeCounter > 0 {
+						_, err = outDBClient.Exec()
+						if err != nil {
+							log.Printf("DataSync[%d]:Sync %s write failed. error:%v\n", k, hash, err)
+							continue
+						}
 					}
-					log.Printf("DataSync[%d]:Sync %s successful.\n", k, hash)
+
+					log.Printf("DataSync[%d]:Sync %s successful. total:%d\n", k, hash, writeCounter)
 				}
 				log.Printf("DataSync[%d]:Sync %s->%s total:%d successful.\n", k, cmd.Start, cmd.End, len(list))
 			} else {
@@ -141,11 +201,28 @@ func DataSync(configs Configs) {
 						continue
 					}
 					if len(result) == 2 && result[0] == "ok" {
-						_, err := outDBClient.Do("set", key, result[1])
-						if err != nil {
-							log.Printf("DataSync[%d]:Sync key:%s write failed. error:%v\n", k, key, err)
-							continue
+						switch strings.ToLower(cmd.Mode) {
+						case "diff":
+							outResult, err := outDBClient.Do("get", key)
+							if err != nil {
+								log.Printf("DataSync[%d]:Sync key:%s get failed. error:%v\n", k, key, err)
+								continue
+							}
+							if len(outResult) == 2 && outResult[0] == "ok" && result[1] != outResult[1] {
+								_, err := outDBClient.Do("set", key, result[1])
+								if err != nil {
+									log.Printf("DataSync[%d]:Sync key:%s write failed. error:%v\n", k, key, err)
+									continue
+								}
+							}
+						default:
+							_, err := outDBClient.Do("set", key, result[1])
+							if err != nil {
+								log.Printf("DataSync[%d]:Sync key:%s write failed. error:%v\n", k, key, err)
+								continue
+							}
 						}
+
 						log.Printf("DataSync[%d]:Sync key:%s successful.\n", k, key)
 					} else {
 						log.Printf("DataSync[%d]:Sync key:%s get result failed. result:%v\n", k, key, result)
