@@ -18,7 +18,7 @@ version: 0.0.1
 	single hash key sync
 	key scan sync
 	hash scan sync
-	
+
 # Configuration
 
 use json format to configuration ssdb-sync setting.
@@ -38,11 +38,11 @@ use json format to configuration ssdb-sync setting.
       "password":""
     },
     "list":[ //need sync data list
-      {"mode":"all","hash":"Hash-Test","key":""},
-      {"mode":"","hash":"Hash-Key","key":"test"},
-      {"mode":"scan","hash":"","key":"","start":"Key-A","end":"Key-B","bypass":["Bypass"]},
-      {"mode":"","hash":"","key":"Single-Key"},
-      {"mode":"hscan","start":"Hash-A","end":"Hash-B","bypass":["Bypass","bypassB"]}
+      {"type":"all","mode":"diff","hash":"Hash-Test","key":""},
+      {"type":"","mode":"","hash":"Hash-Key","key":"test"},
+      {"type":"scan","mode":"diff","hash":"","key":"","start":"Key-A","end":"Key-B","bypass":["Bypass"]},
+      {"type":"","mode":"","hash":"","key":"Single-Key"},
+      {"type":"hscan","mode":"diff","start":"Hash-A","end":"Hash-B","bypass":["Bypass","bypassB"]}
     ]
   }
 
@@ -50,7 +50,7 @@ use json format to configuration ssdb-sync setting.
 
 ## SSDB-Sync Configuration
 
-| Config Fields  | Description | 
+| Config Fields  | Description |
 | ------------- | ------------- |
 | srcdb  | source ssdb  |
 | outdb  | output ssdb |
@@ -66,20 +66,27 @@ use json format to configuration ssdb-sync setting.
 ### List Configuration
 | Node Fields | Description | Struct |
 | ------------- | ------------- | ------------- |
-| mode   | all / scan / hscan , default:empty string | string |
+| type   | all / scan / hscan , default:empty string | string |
+| mode   | diff / "" , default:empty string | string |
 | hash | ssdb hash table name | string |
 | key | ssdb key name | string |
 | start | if you using scan or hscan, you will need set it | string |
 | end | if you using scan or hscan, you will need set it | string |
 | bypass | bypass sync data | string array |
 
-#### List Mode Configuration
-| Mode | Description |
+#### List Type Configuration
+| Type | Description |
 | ------------- | ------------- |
 | all | get all hash data with sync |
 | scan | scan K/V data with sync |
 | hscan | scan hash data with sync |
 | "" | default, it will check hash or key has set. if yes, will automatic sync |
+
+#### List Mode Configuration
+| Mode | Description |
+| ------------- | ------------- |
+| diff | diff all K/V, if value had changed,will automatic sync the value to output SSDB |
+| "" | default, it will sync all data to output SSDB |
 
 
 #How to build
