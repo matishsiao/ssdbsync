@@ -63,7 +63,7 @@ func DataSync(configs Configs) {
 		switch strings.ToLower(cmd.Type) {
 		case "all":
 			if cmd.Hash != "" {
-				list, err := srcDBClient.HashGetAll(cmd.Hash)
+				list, err := srcDBClient.HashGetAllLite(cmd.Hash)
 				if err != nil {
 					log.Printf("DataSync[%d]:Sync %s get failed. error:%v\n", k, cmd.Hash, err)
 					continue
@@ -71,7 +71,7 @@ func DataSync(configs Configs) {
 				writeCounter := 0
 				switch strings.ToLower(cmd.Mode) {
 				case "diff":
-					outlist, err := outDBClient.HashGetAll(cmd.Hash)
+					outlist, err := outDBClient.HashGetAllLite(cmd.Hash)
 					if err != nil {
 						log.Printf("DataSync[%d]:Sync %s get failed. error:%v\n", k, cmd.Hash, err)
 						continue
@@ -129,7 +129,7 @@ func DataSync(configs Configs) {
 					}
 
 					log.Printf("DataSync[%d]:Sync scan %s get data.\n", k, hash)
-					clist, err := srcDBClient.HashGetAll(hash)
+					clist, err := srcDBClient.HashGetAllLite(hash)
 					if err != nil {
 						log.Printf("DataSync[%d]:Sync %s get failed. error:%v\n", k, hash, err)
 						continue
@@ -137,7 +137,7 @@ func DataSync(configs Configs) {
 					writeCounter := 0
 					switch strings.ToLower(cmd.Mode) {
 					case "diff":
-						outlist, err := outDBClient.HashGetAll(hash)
+						outlist, err := outDBClient.HashGetAllLite(hash)
 						if err != nil {
 							log.Printf("DataSync[%d]:Sync %s get failed. error:%v\n", k, hash, err)
 							continue
