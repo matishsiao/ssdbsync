@@ -11,7 +11,7 @@ import (
 	"github.com/matishsiao/gossdb/ssdb"
 )
 
-const VERSION = "0.0.1"
+const VERSION = "0.0.2"
 
 var (
 	srcDBClient *ssdb.Client
@@ -60,6 +60,7 @@ func main() {
 
 func DataSync(configs Configs) {
 	for k, cmd := range configs.List {
+		log.Printf("Process[%d] Type:%s Mode:%s Hash:%s Key:%s Start:%s End:%s Bypass:%v\n", k, cmd.Type, cmd.Mode, cmd.Hash, cmd.Key, cmd.Start, cmd.End, cmd.Bypass)
 		switch strings.ToLower(cmd.Type) {
 		case "all":
 			if cmd.Hash != "" {
@@ -69,6 +70,7 @@ func DataSync(configs Configs) {
 					continue
 				}
 				writeCounter := 0
+
 				switch strings.ToLower(cmd.Mode) {
 				case "diff":
 					outlist, err := outDBClient.HashGetAllLite(cmd.Hash)
@@ -77,6 +79,17 @@ func DataSync(configs Configs) {
 						continue
 					}
 					for hk, hv := range list {
+						bypass := false
+						for _, substr := range cmd.Bypass {
+							if strings.Contains(hk, substr) {
+								bypass = true
+								break
+							}
+						}
+						if bypass {
+							log.Printf("DataSync[%d]:Sync scan %s:%s bypass this.\n", k, cmd.Hash, hk)
+							continue
+						}
 						if ov, ok := outlist[hk]; ok {
 							if ov != hv {
 								writeCounter++
@@ -89,6 +102,17 @@ func DataSync(configs Configs) {
 					}
 				default:
 					for hk, hv := range list {
+						bypass := false
+						for _, substr := range cmd.Bypass {
+							if strings.Contains(hk, substr) {
+								bypass = true
+								break
+							}
+						}
+						if bypass {
+							log.Printf("DataSync[%d]:Sync scan %s:%s bypass this.\n", k, cmd.Hash, hk)
+							continue
+						}
 						writeCounter++
 						outDBClient.BatchAppend("hset", cmd.Hash, hk, hv)
 					}
